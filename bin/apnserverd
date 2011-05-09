@@ -83,7 +83,7 @@ if pem.nil?
   exit 1
 else
   daemonize if daemon
-  server = ApnServer::Server.new(pem, bind_address, proxy_port)
+  server = ApnServer::Server.new(pem, bind_address, proxy_port, @log_file)
   server.client.host = host
   server.client.port = port
   server.client.password = pem_passphrase
