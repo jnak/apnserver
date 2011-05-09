@@ -10,7 +10,7 @@ module ApnServer
       @queue = EM::Queue.new
       @client = ApnServer::Client.new(pem)
       @bind_address, @port = bind_address, port
-      @loggr = Logger.new(log)
+      Config.logger = Logger.new(log)
     end
 
     def start!
