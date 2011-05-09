@@ -30,11 +30,11 @@ module ApnServer
                   @client.connect! unless @client.connected?
                   @client.write(notification)
                 rescue Errno::EPIPE, OpenSSL::SSL::SSLError
-                  @loggr.error "Caught Error, closing connecting and adding notification back to queue"
+                  Config.loggererror "Caught Error, closing connecting and adding notification back to queue"
                   @client.disconnect!
                   @queue.push(notification)
                 rescue RuntimeError => e
-                  @loggr.error "Unable to handle: #{e}"
+                  Config.logger.error "Unable to handle: #{e}"
                 end
               end
             end
