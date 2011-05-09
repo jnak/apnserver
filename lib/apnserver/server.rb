@@ -1,3 +1,6 @@
+require 'eventmachine'
+require 'apnserver/server_connection'
+
 module ApnServer
   class Server
     attr_accessor :client, :bind_address, :port
