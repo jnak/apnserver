@@ -15,7 +15,7 @@ module ApnServer
 
     def start!
       EventMachine::run do
-        @loggr.info "#{Time.now} Starting APN Server on #{bind_address}:#{port}"
+        Config.logger.info "#{Time.now} Starting APN Server on #{bind_address}:#{port}"
 
         EM.start_server(bind_address, port, ApnServer::ServerConnection) do |s|
           s.queue = @queue

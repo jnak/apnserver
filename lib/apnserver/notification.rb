@@ -10,7 +10,7 @@ module ApnServer
     end
   end
 
-  Config.logger = Logger.new("/dev/null")
+  #Config.logger = Logger.new("/dev/null")
 
   class Notification
     include ApnServer::Payload
