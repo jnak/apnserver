@@ -22,4 +22,5 @@ Gem::Specification.new do |s|
   s.add_dependency 'activesupport',       '~> 3.0.0'
   s.add_development_dependency 'bundler', '~> 1.0.0'
   s.add_development_dependency 'eventmachine', '>= 0.12.8'
+  s.add_development_dependency 'daemon', '>= 1.1.3'
 end
