@@ -8,8 +8,6 @@ require 'apnserver'
 require 'apnserver/server'
 require 'logger'
 
-@lg = Logger.new('apn.log')
-
 def usage
   puts "Usage: apnserverd [switches] --pem <path>"
   puts " --pem-passphrase <passphrase>        pem passphrase"
@@ -26,18 +24,11 @@ end
 def daemonize
   options = {
       :backtrace  => true,
-      :ontop      => true,
-      :log_output => false
+      :ontop      => false,
+      :log_output => true,
+      :app_name => 'apnserverd'
     }
-  @lg.info "just bf"
-  Daemons.daemonize
-  @lg.info "just after"
-  # Daemonize.daemonize(@log_file, 'apnserverd')
-  # open(@pid_file,"w") { |f| f.write(Process.pid) }
-  #   open(@pid_file,"w") do |f|
-  #     f.write(Process.pid)
-  #     File.chmod(0644, @pid_file)
-  #   end
+  Daemons.daemonize(options)
 end
 
 opts = GetoptLong.new(
@@ -59,8 +50,6 @@ host = 'gateway.push.apple.com'
 port = 2195
 pem = nil
 pem_passphrase = nil
-@pid_file = '/var/run/apnserverd.pid'
-@log_file = '/var/log/apnserverd.log'
 daemon = false
 
 opts.each do |opt, arg|
@@ -78,8 +67,6 @@ opts.each do |opt, arg|
     port = arg.to_i
   when '--pid'
     @pid_file = arg
-  when '--log'
-    @log_file = arg
   when '--pem'
     pem = arg
   when '--pem-passphrase'
@@ -89,14 +76,14 @@ opts.each do |opt, arg|
   end
 end
 
+@lg = Logger.new(STDOUT)
+
 if pem.nil?
   usage
   exit 1
 else
-  @lg.info "in"
   daemonize if daemon
-  @lg.info "out"
-  server = ApnServer::Server.new(pem, bind_address, proxy_port, @log_file)
+  server = ApnServer::Server.new(pem, bind_address, proxy_port, STDOUT)
   server.client.host = host
   server.client.port = port
   server.client.password = pem_passphrase
