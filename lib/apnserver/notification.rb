@@ -32,8 +32,11 @@ module ApnServer
       j
     end
     
+    ## FIXME Config.port.to_i equals 0 when Config.port is nil
+    #  
+    
     def apush
-      socket = TCPSocket.new(Config.host || 'localhost', Config.port.to_i || 22195)
+      socket = EM::Synchrony::TCPSocket.new('localhost', 22195)
       socket.write(to_bytes)
       socket.close
     end
