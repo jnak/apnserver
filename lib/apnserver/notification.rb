@@ -2,6 +2,7 @@ require 'apnserver/payload'
 require 'base64'
 require 'active_support/ordered_hash'
 require 'active_support/json'
+require 'em-synchrony'
 
 module ApnServer
   class Config
@@ -30,7 +31,13 @@ module ApnServer
       raise PayloadInvalid.new("The payload is larger than allowed: #{j.length}") if j.size > 256
       j
     end
-
+    
+    def apush
+      socket = TCPSocket.new(Config.host || 'localhost', Config.port.to_i || 22195)
+      socket.write(to_bytes)
+      socket.close
+    end
+    
     def push
       if Config.pem.nil?
         socket = TCPSocket.new(Config.host || 'localhost', Config.port.to_i || 22195)
