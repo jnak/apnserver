@@ -21,18 +21,26 @@ module ApnServer
           s.queue = @queue
         end
 
-        EventMachine::PeriodicTimer.new(1) do
+        EventMachine::PeriodicTimer.new(0.01) do
           unless @queue.empty?
             size = @queue.size
             size.times do
               @queue.pop do |notification|
+                retries = 2
                 begin
                   @client.connect! unless @client.connected?
                   @client.write(notification)
-                rescue Errno::EPIPE, OpenSSL::SSL::SSLError
-                  Config.loggererror "Caught Error, closing connecting and adding notification back to queue"
-                  @client.disconnect!
-                  @queue.push(notification)
+                rescue Errno::EPIPE, OpenSSL::SSL::SSLError, Errno::ECONNRESET
+                  if retries == 2
+                    Config.logger.error "Connection to APN servers idle for too long. Trying to reconnect"
+                    @client.disconnect!
+                    retries -= 1
+                    retry
+                  else
+                    Config.logger.error "Can't reconnect to APN Servers! Pushing notifications back to queue"
+                    @client.disconnect! 
+                    @queue.push(notification)
+                  end
                 rescue RuntimeError => e
                   Config.logger.error "Unable to handle: #{e}"
                 end
