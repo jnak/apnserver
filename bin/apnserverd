@@ -51,6 +51,7 @@ port = 2195
 pem = nil
 pem_passphrase = nil
 daemon = false
+log = STDOUT
 
 opts.each do |opt, arg|
   case opt
