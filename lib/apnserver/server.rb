@@ -13,7 +13,8 @@ module ApnServer
       if log == STDOUT
         Config.logger = Logger.new STDOUT
       else
-        Config.logger = Logger.new(log, 'a+')
+        f = File.open(log, File::WRONLY | File::APPEND)
+        Config.logger = Logger.new(f, 'daily')
       end
     end
 
