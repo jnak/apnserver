@@ -62,7 +62,11 @@ opts.each do |opt, arg|
   when '--proxy-port'
     proxy_port = arg.to_i
   when '--server'
-    host = arg
+    if arg == 'sandbox'
+      host = 'gateway.sandbox.push.apple.com'
+    else
+      raise 'Wrong --server option. Pass "sandbox" as option to override production servers'
+    end
   when '--port'
     port = arg.to_i
   when '--pid'
@@ -73,17 +77,17 @@ opts.each do |opt, arg|
     pem_passphrase = arg
   when '--daemon'
     daemon = true
+  when '--log'
+    log = arg
   end
 end
-
-@lg = Logger.new(STDOUT)
 
 if pem.nil?
   usage
   exit 1
 else
   daemonize if daemon
-  server = ApnServer::Server.new(pem, bind_address, proxy_port, STDOUT)
+  server = ApnServer::Server.new(pem, bind_address, proxy_port, log)
   server.client.host = host
   server.client.port = port
   server.client.password = pem_passphrase
