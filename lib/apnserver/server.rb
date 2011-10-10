@@ -4,7 +4,7 @@ require 'logger'
 
 module ApnServer
   class Server
-    attr_accessor :client, :bind_address, :port
+    attr_accessor :client, :bind_address, :port, :last_notif_time
 
     def initialize(pem, bind_address = '0.0.0.0', port = 22195, log = '/apnserverd.log')
       @queue = EM::Queue.new
@@ -16,6 +16,7 @@ module ApnServer
         f = File.open(log, File::WRONLY | File::APPEND)
         Config.logger = Logger.new(f, 'daily')
       end
+      @last_notif_time = Time.now.to_i
     end
 
     def start!
@@ -33,6 +34,9 @@ module ApnServer
               @queue.pop do |notification|
                 retries = 2
                 begin
+                  if @client.connected? && @last_notif_time > Time.now.to_i + 1000
+                    @client.disconnect!
+                  end
                   @client.connect! unless @client.connected?
                   @client.write(notification)
                 rescue Errno::EPIPE, OpenSSL::SSL::SSLError, Errno::ECONNRESET
