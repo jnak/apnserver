@@ -40,7 +40,7 @@ module ApnServer
                   end
                   @client.connect! unless @client.connected?
                   @client.write(notification)
-                rescue Errno::EPIPE, OpenSSL::SSL::SSLError, Errno::ECONNRESET
+                rescue Errno::EPIPE, OpenSSL::SSL::SSLError, Errno::ECONNRESET, Errno::ETIMEDOUT
                   if retries == 2
                     Config.logger.error "Connection to APN servers idle for too long. Trying to reconnect"
                     @client.disconnect!
