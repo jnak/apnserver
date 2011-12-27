@@ -12,11 +12,15 @@ module ApnServer
       @bind_address, @port = bind_address, port
       if log == STDOUT
         Config.logger = Logger.new STDOUT
-      else
+      elsif File.exist?(log)
         f = File.open(log, File::WRONLY | File::APPEND)
         Config.logger = Logger.new(f, 'daily')
+      else
+        FileUtils.mkdir_p(File.dirname(log))
+	      f = File.open(log, File::WRONLY | File::APPEND | File::CREAT)
+        Config.logger = Logger.new(f, 'daily')
       end
-      @last_conn_time = Time.now.to_i
+      @last_conn_time = Time.now
     end
 
     def start!
@@ -26,6 +30,8 @@ module ApnServer
         EM.start_server(bind_address, port, ApnServer::ServerConnection) do |s|
           s.queue = @queue
         end
+        
+        EM::Synchrony.add_periodic_timer(5) { Config.logger.flush }
 
         EventMachine::PeriodicTimer.new(0.01) do
           unless @queue.empty?
@@ -34,17 +40,23 @@ module ApnServer
               @queue.pop do |notification|
                 retries = 2
                 begin
-                  if @client.connected? && @last_conn_time > Time.now.to_i + 1000
-                    @client.disconnect!
-                    @last_conn_time = Time.now.to_i
+                  if @client.connected? && @last_conn_time > (Time.now + 1000)
+                    Config.logger.error 'Disconnecting connection to APN'
+		                @client.disconnect!
+                    @last_conn_time = Time.now
                   end
-                  @client.connect! unless @client.connected?
-                  @client.write(notification)
+                  unless @client.connected?
+                    Config.logger.info "Reconnecting to APN servers"
+		                @client.connect!
+		              end
+                  Config.logger.debug 'Sending notification to APN'
+		              @client.write(notification)
+		              Config.logger.debug 'Notif sent'
                 rescue Errno::EPIPE, OpenSSL::SSL::SSLError, Errno::ECONNRESET, Errno::ETIMEDOUT
-                  if retries == 2
+                  if retries > 1
                     Config.logger.error "Connection to APN servers idle for too long. Trying to reconnect"
                     @client.disconnect!
-                    @last_conn_time = Time.now.to_i
+                    @last_conn_time = Time.now
                     retries -= 1
                     retry
                   else
