@@ -13,12 +13,12 @@ module ApnServer
       if log == STDOUT
         Config.logger = Logger.new STDOUT
       elsif File.exist?(log)
-        f = File.open(log, File::WRONLY | File::APPEND)
-        Config.logger = Logger.new(f, 'daily')
+        @flog = File.open(log, File::WRONLY | File::APPEND)
+        Config.logger = Logger.new(@flog, 'daily')
       else
         FileUtils.mkdir_p(File.dirname(log))
-	      f = File.open(log, File::WRONLY | File::APPEND | File::CREAT)
-        Config.logger = Logger.new(f, 'daily')
+	      @flog = File.open(log, File::WRONLY | File::APPEND | File::CREAT)
+        Config.logger = Logger.new(@flog, 'daily')
       end
       @last_conn_time = Time.now
     end
@@ -31,7 +31,7 @@ module ApnServer
           s.queue = @queue
         end
         
-        EM::Synchrony.add_periodic_timer(5) { Config.logger.flush }
+        EM::Synchrony.add_periodic_timer(5) { @flog.flush if @flog }
 
         EventMachine::PeriodicTimer.new(0.01) do
           unless @queue.empty?
@@ -40,7 +40,7 @@ module ApnServer
               @queue.pop do |notification|
                 retries = 2
                 begin
-                  if @client.connected? && @last_conn_time > (Time.now + 1000)
+                  if @client.connected? && (@last_conn_time + 1000) < Time.now
                     Config.logger.error 'Disconnecting connection to APN'
 		                @client.disconnect!
                     @last_conn_time = Time.now
